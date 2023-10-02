@@ -15,7 +15,8 @@ class MainWindow : public CFramelessWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-
+protected:
+    void closeEvent(QCloseEvent *event);
 private slots:
     void on_btnMin_clicked();
     void on_btnMax_clicked();
@@ -24,6 +25,8 @@ private slots:
     void on_btnIncreaseMargin_clicked();
     void on_btnDecreaseMargin_clicked();
     void on_btnResizeable_clicked();
+
+    void on_btnSubWindow_clicked();
 
 private:
     QString currentMargins();

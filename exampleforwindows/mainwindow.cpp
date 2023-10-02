@@ -1,6 +1,8 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QRect>
+#include "framelesshelper.h"
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
     CFramelessWindow(parent),
@@ -43,6 +45,10 @@ void MainWindow::on_btnClose_clicked()
 {
     close();
 }
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    qDebug() << event->type();
+}
 
 void MainWindow::on_bthFull_clicked()
 {
@@ -80,4 +86,37 @@ QString MainWindow::currentMargins()
 void MainWindow::on_btnResizeable_clicked()
 {
     setResizeable(!isResizeable());
+}
+
+void MainWindow::on_btnSubWindow_clicked()
+{
+    QWidget * subWin = new QWidget(this);
+    FramelessHelper * fl = new FramelessHelper(subWin);
+
+    subWin->setAttribute(Qt::WA_DeleteOnClose);
+    subWin->setWindowFlag(Qt::Window,true);
+
+    QVBoxLayout* vl = new QVBoxLayout(subWin);
+    vl->setMargin(0);
+    vl->setSpacing(0);
+    subWin->setLayout(vl);
+
+    QLabel* titleBar = new QLabel(subWin);
+    titleBar->setStyleSheet("background-color:red");
+    titleBar->resize(500,50);
+    titleBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    titleBar->installEventFilter(fl);
+
+    QLabel * content = new QLabel(subWin);
+    content->setStyleSheet("QLabel{background-color:gray}");
+    content->setText("test content");
+    content->setAlignment(Qt::AlignCenter);
+    content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    content->resize(500,100);
+
+    vl->addWidget(titleBar);
+    vl->addWidget(content);
+
+    subWin->resize(500,400);
+    subWin->show();
 }
