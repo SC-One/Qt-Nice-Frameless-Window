@@ -2,6 +2,8 @@
 #include <QApplication>
 #include <QPoint>
 #include <QSize>
+#include<QDebug>
+
 #ifdef Q_OS_WIN
 
 #include <windows.h>
@@ -15,7 +17,7 @@
 #pragma comment (lib,"user32.lib")
 
 CFramelessWindow::CFramelessWindow(QWidget *parent)
-    : QMainWindow(parent),
+    : CommonCFrameless(parent),
       m_titlebar(Q_NULLPTR),
       m_borderWidth(5),
       m_bJustMaximized(false),
@@ -105,9 +107,11 @@ bool CFramelessWindow::nativeEvent(const QByteArray &eventType, void *message, l
     {
     case WM_NCCALCSIZE:
     {
+        if(enableNativeWindow())
+            return QMainWindow::nativeEvent(eventType, message, result);
         NCCALCSIZE_PARAMS& params = *reinterpret_cast<NCCALCSIZE_PARAMS*>(msg->lParam);
- 	if (params.rgrc[0].top != 0)
-		params.rgrc[0].top -= 1;
+        if (params.rgrc[0].top != 0)
+            params.rgrc[0].top -= 1;
 
         //this kills the window frame and title bar we added with WS_THICKFRAME and WS_CAPTION
         *result = WVR_REDRAW;
@@ -298,4 +302,6 @@ void CFramelessWindow::showFullScreen()
     QMainWindow::showFullScreen();
 }
 
+
 #endif //Q_OS_WIN
+

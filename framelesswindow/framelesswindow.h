@@ -3,6 +3,68 @@
 #include "qsystemdetection.h"
 #include <QObject>
 #include <QMainWindow>
+#include <QSettings>
+#include <QMessageBox>
+
+class DynamicNative : public QObject {
+    Q_OBJECT
+    const QString DEFAULT_KEY = "NativeWinValue";
+public:
+    explicit DynamicNative(QObject * parent = nullptr) : QObject(parent) {
+        _isNativeNow = _settingSaver.value(DynamicNative::DEFAULT_KEY , false).toBool();
+    }
+    ~DynamicNative(){
+        _settingSaver.sync();
+    }
+    bool isNativeNow() const {
+        return _isNativeNow;
+    }
+    void setIsNativeNow(bool newIsNativeNow) {
+        if(isNativeNow() == newIsNativeNow)
+            return;
+        auto result = QMessageBox::question(nullptr,
+                                            "Need native window?",
+                                            "By enabling this feature,"
+                                            " may application need restart,"
+                                            " are you sure?");
+        if(result == QMessageBox::StandardButton::No) return;
+        _settingSaver.setValue(DynamicNative::DEFAULT_KEY, newIsNativeNow);
+        _isNativeNow = newIsNativeNow;
+        emit valueChanged(newIsNativeNow);
+    }
+
+signals:
+    void valueChanged(bool isNative);
+
+private:
+    QSettings _settingSaver;
+    bool _isNativeNow;
+};
+
+class CommonCFrameless : public QMainWindow {
+    Q_OBJECT
+public:
+    explicit CommonCFrameless(QWidget *parent = nullptr) : QMainWindow(parent) {
+        connect(&_nativeStateSaver, &DynamicNative::valueChanged,
+                this, &CommonCFrameless::nativeFrameNeedRestart);
+    }
+    virtual ~CommonCFrameless() {
+
+    }
+
+    bool enableNativeWindow() const {
+        return _nativeStateSaver.isNativeNow();
+    }
+
+    void setEnableNativeWindow(bool newEnableNativeWindow) {
+        _nativeStateSaver.setIsNativeNow(newEnableNativeWindow);
+    }
+signals:
+    void nativeFrameNeedRestart(bool newEnableNativeFrame);
+
+private:
+    DynamicNative _nativeStateSaver;
+};
 
 //A nice frameless window for both Windows and OS X
 //Author: Bringer-of-Light
@@ -13,7 +75,8 @@
 #include <QList>
 #include <QMargins>
 #include <QRect>
-class CFramelessWindow : public QMainWindow
+
+class CFramelessWindow : public CommonCFrameless
 {
     Q_OBJECT
 public:
@@ -50,7 +113,8 @@ public:
     QMargins contentsMargins() const;
     QRect contentsRect() const;
     void getContentsMargins(int *left, int *top, int *right, int *bottom) const;
-public slots:
+
+   public slots:
     void showFullScreen();
 private:
     QWidget* m_titlebar;
@@ -63,7 +127,7 @@ private:
 
     bool m_bResizeable;
 };
-
+//TODO: test on mac and change it too.(if needed)
 #elif defined Q_OS_MAC
 #include <QMouseEvent>
 #include <QResizeEvent>
