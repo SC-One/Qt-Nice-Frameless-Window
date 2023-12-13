@@ -27,7 +27,10 @@ public:
                                             "By enabling this feature,"
                                             " may application need restart,"
                                             " are you sure?");
-        if(result == QMessageBox::StandardButton::No) return;
+        if(QMessageBox::StandardButton::No == result) {
+            emit nativeChangeCanceled();
+            return;
+        }
         _settingSaver.setValue(DynamicNative::DEFAULT_KEY, newIsNativeNow);
         _isNativeNow = newIsNativeNow;
         emit valueChanged(newIsNativeNow);
@@ -35,6 +38,7 @@ public:
 
 signals:
     void valueChanged(bool isNative);
+    void nativeChangeCanceled();
 
 private:
     QSettings _settingSaver;
@@ -47,6 +51,8 @@ public:
     explicit CommonCFrameless(QWidget *parent = nullptr) : QMainWindow(parent) {
         connect(&_nativeStateSaver, &DynamicNative::valueChanged,
                 this, &CommonCFrameless::nativeFrameNeedRestart);
+        connect(&_nativeStateSaver, &DynamicNative::nativeChangeCanceled,
+                this, &CommonCFrameless::nativeChangeCanceled);
     }
     virtual ~CommonCFrameless() {
 
@@ -61,6 +67,7 @@ public:
     }
 signals:
     void nativeFrameNeedRestart(bool newEnableNativeFrame);
+    void nativeChangeCanceled();
 
 private:
     DynamicNative _nativeStateSaver;
